@@ -7,37 +7,8 @@
   },
   "interactions": [
     {
-      "description": "A GET request to check the api status",
-      "request": {
-        "method": "get",
-        "path": "/stats/status"
-      },
-      "response": {
-        "status": 200,
-        "body": "alive"
-      }
-    },
-    {
-      "description": "A POST request to create a new event",
-      "request": {
-        "method": "post",
-        "path": "/events",
-        "headers": {
-          "Content-Type": "application/json; charset=utf-8"
-        },
-        "body": {
-          "eventId": "1f587704-2dcc-4313-a233-7b62b4b469db",
-          "timestamp": "2011-07-01T01:41:03.0000000",
-          "eventType": "DetailsView"
-        }
-      },
-      "response": {
-        "status": 201
-      }
-    },
-    {
       "description": "A GET request to retrieve events with type 'SearchView'",
-      "providerState": "There is at least one even with type 'SearchView'",
+      "providerState": "There is at least one event with type 'SearchView'",
       "request": {
         "method": "get",
         "path": "/events",
@@ -110,6 +81,65 @@
         "body": {
           "eventId": "83f9262f-28f1-4703-ab1a-8cfd9e8249c9"
         }
+      }
+    },
+    {
+      "description": "A GET request to retrieve events with type grouping 'Search'",
+      "providerState": "There is at least one event with type grouping 'Search'",
+      "request": {
+        "method": "get",
+        "path": "/events",
+        "query": "typeGrouping=Search",
+        "headers": {
+          "Accept": "application/json"
+        }
+      },
+      "responseMatchingRules": {
+        "body": {
+          "$.eventType": {
+            "regex": ".*[Ss]earch.*"
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json; charset=utf-8"
+        },
+        "body": [
+          {
+            "eventType": "SearchListing"
+          }
+        ]
+      }
+    },
+    {
+      "description": "A GET request to check the api status",
+      "request": {
+        "method": "get",
+        "path": "/stats/status"
+      },
+      "response": {
+        "status": 200,
+        "body": "alive"
+      }
+    },
+    {
+      "description": "A POST request to create a new event",
+      "request": {
+        "method": "post",
+        "path": "/events",
+        "headers": {
+          "Content-Type": "application/json; charset=utf-8"
+        },
+        "body": {
+          "eventId": "1f587704-2dcc-4313-a233-7b62b4b469db",
+          "timestamp": "2011-07-01T01:41:03.0000000",
+          "eventType": "DetailsView"
+        }
+      },
+      "response": {
+        "status": 201
       }
     }
   ],

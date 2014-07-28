@@ -71,10 +71,12 @@ namespace PactNet.Mocks.MockHttpService.Validators
 
             var response = _httpClient.SendAsync(request, CancellationToken.None).Result;
 
+            var responseMatchingRules = interaction.ResponseMatchingRules;
+
             var expectedResponse = interaction.Response;
             var actualResponse = _pactProviderServiceResponseMapper.Convert(response);
 
-            _providerServiceResponseComparer.Compare(expectedResponse, actualResponse);
+            _providerServiceResponseComparer.Compare(expectedResponse, actualResponse, responseMatchingRules);
         }
     }
 }

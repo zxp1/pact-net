@@ -146,5 +146,28 @@ namespace Consumer
                 throw new Exception(result.ReasonPhrase);
             }
         }
+
+        public IEnumerable<Event> GetEventsByTypeGrouping(string eventTypeGrouping)
+        {
+            var client = new HttpClient();
+            client.BaseAddress = new Uri(BaseUri);
+
+            var request = new HttpRequestMessage(HttpMethod.Get, String.Format("/events?typeGrouping={0}", eventTypeGrouping));
+            request.Headers.Add("Accept", "application/json");
+
+            var response = client.SendAsync(request);
+            var result = response.Result;
+            var content = result.Content.ReadAsStringAsync().Result;
+            var status = result.StatusCode;
+
+            result.EnsureSuccessStatusCode();
+
+            if (status == HttpStatusCode.OK)
+            {
+                return JsonConvert.DeserializeObject<IEnumerable<Event>>(content, _jsonSettings);
+            }
+
+            throw new ArgumentException(String.Format("Event with type grouping'{0}' could not be found", eventTypeGrouping));
+        }
     }
 }

@@ -1,12 +1,17 @@
 ﻿
 using System;
 using System.Collections.Generic;
+using System.Dynamic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using PactNet.Mocks.MockHttpService.Models;
+using PactNet.Models;
 using Xunit;
 
 namespace Consumer.Tests
 {
+    
+
     public class EventsApiConsumerTests : IUseFixture<ConsumerEventApiPact>
     {
         private ConsumerEventApiPact _data;
@@ -171,11 +176,11 @@ namespace Consumer.Tests
         }
 
         [Fact]
-        public void GetEventsByType_WhenEventsWithTheTypeExists_ReturnsEvents()
+        public void GetEventsByType_WhenEventsWithTheTypeExist_ReturnsEvents()
         {
             //Arrange
             const string eventType = "SearchView";
-            _data.MockProviderService.Given(String.Format("There is at least one even with type '{0}'", eventType))
+            _data.MockProviderService.Given(String.Format("There is at least one event with type '{0}'", eventType))
                 .UponReceiving(String.Format("A GET request to retrieve events with type '{0}'", eventType))
                 .With(new PactProviderServiceRequest
                 {
@@ -210,6 +215,48 @@ namespace Consumer.Tests
 
             //Assert
             Assert.Equal(eventType, result.First().EventType);
+        }
+
+        [Fact]
+        public void GetEventsByTypeGrouping_WhenEventsWithTheTypeGroupingExist_ReturnsEvents()
+        {
+            //Arrange
+            const string eventTypeGrouping = "Search";
+            _data.MockProviderService.Given(String.Format("There is at least one event with type grouping '{0}'", eventTypeGrouping))
+                .UponReceiving(String.Format("A GET request to retrieve events with type grouping '{0}'", eventTypeGrouping))
+                .With(new PactProviderServiceRequest
+                {
+                    Method = HttpVerb.Get,
+                    Path = "/events",
+                    Query = "typeGrouping=" + eventTypeGrouping,
+                    Headers = new Dictionary<string, string>
+                    {
+                        { "Accept", "application/json" }
+                    }
+                })
+                .WillRespondWith(new PactProviderServiceResponse
+                {
+                    Status = 200,
+                    Headers = new Dictionary<string, string>
+                    {
+                        { "Content-Type", "application/json; charset=utf-8" }
+                    },
+                    Body = new []
+                    {
+                        new
+                        {
+                            eventType = Matchers.Eg("SearchListing", ".*[Ss]earch.*")
+                        }
+                    }
+                });
+
+            var consumer = new EventsApiClient(_data.MockServerBaseUri);
+
+            //Act
+            var result = consumer.GetEventsByTypeGrouping(eventTypeGrouping);
+
+            //Assert
+            Assert.True(result.First().EventType.IndexOf(eventTypeGrouping, StringComparison.InvariantCultureIgnoreCase) > -1, "Event returned has a typeGrouping of " + eventTypeGrouping);
         }
     }
 }

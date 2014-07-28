@@ -1,7 +1,8 @@
-﻿using System;
+﻿using System.Collections.Generic;
 using System.Linq;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using PactNet.Models;
 
 namespace PactNet.Mocks.MockHttpService.Comparers
 {
@@ -16,7 +17,7 @@ namespace PactNet.Mocks.MockHttpService.Comparers
         }
 
         //TODO: Remove boolean and add "matching" functionality
-        public void Validate(dynamic body1, dynamic body2, bool useStrict = false)
+        public void Validate(dynamic body1, dynamic body2, IDictionary<string, Matcher> matchers = null, bool useStrict = false)
         {
             _comparisonPasses = 0;
 
@@ -52,7 +53,7 @@ namespace PactNet.Mocks.MockHttpService.Comparers
                     {
                         try
                         {
-                            AssertPropertyValuesMatch(element1, element2);
+                            AssertPropertyValuesMatch(element1, element2, matchers);
                             element2.Remove();
                             break;
                         }
@@ -68,12 +69,12 @@ namespace PactNet.Mocks.MockHttpService.Comparers
             }
             else
             {
-                AssertPropertyValuesMatch(httpBody1, httpBody2);
+                AssertPropertyValuesMatch(httpBody1, httpBody2, matchers);
             }
         }
 
-       
-        private void AssertPropertyValuesMatch(JToken httpBody1, JToken httpBody2)
+
+        private void AssertPropertyValuesMatch(JToken httpBody1, JToken httpBody2, IDictionary<string, Matcher> matchers = null)
         {
             _comparisonPasses++;
             if (_comparisonPasses > 200)
@@ -100,7 +101,7 @@ namespace PactNet.Mocks.MockHttpService.Comparers
 
                     for (var i = 0; i < httpBody1.Count(); i++)
                     {
-                        AssertPropertyValuesMatch(httpBody1[i], httpBody2[i]);
+                        AssertPropertyValuesMatch(httpBody1[i], httpBody2[i], matchers);
                     }
                     break;
                 
@@ -108,17 +109,22 @@ namespace PactNet.Mocks.MockHttpService.Comparers
                     foreach (JProperty item1 in httpBody1)
                     {
                         var item2 = httpBody2.Cast<JProperty>().SingleOrDefault(x => x.Name == item1.Name);
-                        AssertPropertyValuesMatch(item1, item2);
+                        AssertPropertyValuesMatch(item1, item2, matchers);
                     }
                     break;
             
                 case JTokenType.Property:
-                    AssertPropertyValuesMatch(httpBody1.SingleOrDefault(), httpBody2.SingleOrDefault());
+                    AssertPropertyValuesMatch(httpBody1.SingleOrDefault(), httpBody2.SingleOrDefault(), matchers);
                     break;
 
                 case JTokenType.Integer:
                 case JTokenType.String:
-                    if (!httpBody1.Equals(httpBody2))
+                    var path = ToJsonPath(httpBody1.Path);
+                    if (matchers != null && matchers.ContainsKey(path))
+                    {
+                        matchers[path].Match(httpBody2.ToString());
+                    } 
+                    else if (!httpBody1.Equals(httpBody2))
                     {
                         throw new CompareFailedException(httpBody1, httpBody2);
                     }
@@ -131,6 +137,22 @@ namespace PactNet.Mocks.MockHttpService.Comparers
                     }
                     break;
             }
+        }
+
+        private string ToJsonPath(string jsonNetPath)
+        {
+            string key;
+            var index = jsonNetPath.IndexOf('.');
+            if (index > -1)
+            {
+                key = jsonNetPath.Substring(index, jsonNetPath.Length - index);
+            }
+            else
+            {
+                key = "." + jsonNetPath; //TODO: Maybe strip the . and add to the return
+            }
+
+            return "$" + key;
         }
     }
 }

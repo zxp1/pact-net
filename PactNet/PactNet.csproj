@@ -102,6 +102,7 @@
     <Compile Include="Mocks\MockHttpService\Validators\IProviderServiceValidator.cs" />
     <Compile Include="Mocks\MockHttpService\Validators\ProviderServiceValidator.cs" />
     <Compile Include="Mocks\MockHttpService\Nancy\NancyContextExtensions.cs" />
+    <Compile Include="Models\RegexMatcher.cs" />
     <Compile Include="Pact.cs" />
     <Compile Include="Models\PactFile.cs" />
     <Compile Include="PactProvider.cs" />

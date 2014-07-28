@@ -29,6 +29,12 @@ namespace Provider.Api.Web.Controllers
         }
 
         [Route("events")]
+        public IEnumerable<Event> GetByTypeGrouping(string typeGrouping)
+        {
+            return GetAllEventsFromRepo().Where(x => x.EventType.IndexOf(typeGrouping, StringComparison.InvariantCultureIgnoreCase) > -1);
+        }
+
+        [Route("events")]
         public HttpResponseMessage Post(Event @event)
         {
             if (@event == null)

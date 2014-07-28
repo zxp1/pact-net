@@ -19,7 +19,7 @@ namespace PactNet.Mocks.MockHttpService.Comparers
             _httpBodyComparer = new HttpBodyComparer(MessagePrefix);
         }
 
-        public void Compare(PactProviderServiceResponse response1, PactProviderServiceResponse response2)
+        public void Compare(PactProviderServiceResponse response1, PactProviderServiceResponse response2, PactProviderResponseMatchingRules responseMatchingRules = null)
         {
             if (response1 == null)
             {
@@ -44,7 +44,7 @@ namespace PactNet.Mocks.MockHttpService.Comparers
                 var actualResponseBody = JsonConvert.DeserializeObject<JToken>(actualResponseBodyJson);
                 var expectedResponseBody = JsonConvert.DeserializeObject<JToken>(expectedResponseBodyJson);
 
-                _httpBodyComparer.Validate(expectedResponseBody, actualResponseBody);
+                _httpBodyComparer.Validate(expectedResponseBody, actualResponseBody, responseMatchingRules != null ? responseMatchingRules.Body : null);
             }
         }
     }
