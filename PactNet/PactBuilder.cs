@@ -11,8 +11,9 @@ namespace PactNet
         public string ProviderName { get; private set; }
         private readonly Func<int, bool, string, IMockProviderService> _mockProviderServiceFactory;
         private IMockProviderService _mockProviderService;
-
-        internal PactBuilder(Func<int, bool, string, IMockProviderService> mockProviderServiceFactory)
+        
+        internal PactBuilder(
+            Func<int, bool, string, IMockProviderService> mockProviderServiceFactory)
         {
             _mockProviderServiceFactory = mockProviderServiceFactory;
         }
@@ -62,16 +63,23 @@ namespace PactNet
 
         public void Build()
         {
+            Build<PactFile>();
+        }
+
+        public T Build<T>() where T : PactFile
+        {
             if (_mockProviderService == null)
             {
                 throw new InvalidOperationException("The Pact file could not be saved because the mock provider service is not initialised. Please initialise by calling the MockService() method.");
             }
 
-            PersistPactFile();
+            var pactFile = PersistPactFile<T>();
             _mockProviderService.Stop();
+
+            return pactFile;
         }
 
-        private void PersistPactFile()
+        private T PersistPactFile<T>() where T : PactFile
         {
             if (String.IsNullOrEmpty(ConsumerName))
             {
@@ -89,7 +97,9 @@ namespace PactNet
                 Consumer = new Pacticipant { Name = ConsumerName }
             };
 
-            _mockProviderService.SendAdminHttpRequest(HttpVerb.Post, Constants.PactPath, pactDetails);
+            var pactFile = _mockProviderService.SendAdminHttpRequest<PactDetails, T>(HttpVerb.Post, Constants.PactPath, pactDetails);
+
+            return pactFile;
         }
     }
 }

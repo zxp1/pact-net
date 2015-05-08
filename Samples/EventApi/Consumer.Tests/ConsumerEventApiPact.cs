@@ -1,6 +1,7 @@
 ﻿using System;
 using PactNet;
 using PactNet.Mocks.MockHttpService;
+using PactNet.Mocks.MockHttpService.Models;
 
 namespace Consumer.Tests
 {
@@ -23,7 +24,7 @@ namespace Consumer.Tests
 
         public void Dispose()
         {
-            PactBuilder.Build();
+            PactBuilder.Build<ProviderServicePactFile>();
         }
     }
 }

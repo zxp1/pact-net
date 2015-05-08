@@ -205,7 +205,7 @@ namespace PactNet.Mocks.MockHttpService.Nancy
             return new Response
             {
                 StatusCode = statusCode,
-                Headers = new Dictionary<string, string> { { "Content-Type", contentType } },
+                ContentType = contentType,
                 Contents = s => SetContent(message, s)
             };
         }

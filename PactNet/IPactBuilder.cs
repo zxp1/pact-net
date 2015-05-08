@@ -1,4 +1,5 @@
 ﻿using PactNet.Mocks.MockHttpService;
+using PactNet.Models;
 
 namespace PactNet
 {
@@ -8,5 +9,6 @@ namespace PactNet
         IPactBuilder HasPactWith(string providerName);
         IMockProviderService MockService(int port, bool enableSsl = false);
         void Build();
+        T Build<T>() where T : PactFile;
     }
 }

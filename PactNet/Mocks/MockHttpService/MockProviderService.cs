@@ -20,6 +20,7 @@ namespace PactNet.Mocks.MockHttpService
         private readonly HttpClient _httpClient;
         private readonly IHttpMethodMapper _httpMethodMapper;
 
+
         private string _providerState;
         private string _description;
         private ProviderServiceRequest _request;
@@ -144,7 +145,7 @@ namespace PactNet.Mocks.MockHttpService
             }
         }
 
-        public void SendAdminHttpRequest<T>(HttpVerb method, string path, T requestContent, IDictionary<string, string> headers = null) where T : class
+        public TResponse SendAdminHttpRequest<TRequest, TResponse>(HttpVerb method, string path, TRequest requestContent, IDictionary<string, string> headers = null)
         {
             if (_host == null)
             {
@@ -152,6 +153,7 @@ namespace PactNet.Mocks.MockHttpService
             }
 
             var responseContent = String.Empty;
+            string responseContentType = null;
 
             var request = new HttpRequestMessage(_httpMethodMapper.Convert(method), path);
             request.Headers.Add(Constants.AdministrativeRequestHeaderKey, "true");
@@ -175,6 +177,7 @@ namespace PactNet.Mocks.MockHttpService
 
             if (response.Content != null)
             {
+                responseContentType = response.Content.Headers.ContentType.MediaType;
                 responseContent = response.Content.ReadAsStringAsync().Result;
             }
 
@@ -185,6 +188,14 @@ namespace PactNet.Mocks.MockHttpService
             {
                 throw new PactFailureException(responseContent);
             }
+
+            var res = default(TResponse);
+            if (!String.IsNullOrWhiteSpace(responseContent) && responseContentType == "application/json")
+            {
+                res = JsonConvert.DeserializeObject<TResponse>(responseContent);
+            }
+
+            return res;
         }
 
         private void RegisterInteraction()
@@ -214,7 +225,7 @@ namespace PactNet.Mocks.MockHttpService
 
             var testContext = BuildTestContext();
 
-            SendAdminHttpRequest(HttpVerb.Post, Constants.InteractionsPath, interaction, new Dictionary<string, string> { { Constants.AdministrativeRequestTestContextHeaderKey, testContext } });
+            SendAdminHttpRequest<ProviderServiceInteraction, object>(HttpVerb.Post, Constants.InteractionsPath, interaction, new Dictionary<string, string> { { Constants.AdministrativeRequestTestContextHeaderKey, testContext } });
 
             ClearTrasientState();
         }
@@ -251,7 +262,7 @@ namespace PactNet.Mocks.MockHttpService
 
         private void SendAdminHttpRequest(HttpVerb method, string path)
         {
-            SendAdminHttpRequest<object>(method, path, null);
+            SendAdminHttpRequest<object, object>(method, path, null);
         }
 
         private void StopRunningHost()

@@ -57,6 +57,7 @@ namespace PactNet.Mocks.MockHttpService.Nancy
                 {
                     StatusCode = HttpStatusCode.InternalServerError,
                     ReasonPhrase = exceptionMessage,
+                    ContentType = "text/plain",
                     Contents = s =>
                     {
                         var bytes = Encoding.UTF8.GetBytes(exceptionMessage);

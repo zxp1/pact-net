@@ -766,7 +766,7 @@ namespace PactNet.Tests.Mocks.MockHttpService.Nancy
 
             var response = handler.Handle(context);
 
-            Assert.Equal("application/json", response.Headers["Content-Type"]);
+            Assert.Equal("application/json", response.ContentType);
             Assert.Equal(pactFileJson, ReadResponseContent(response.Contents));
         }
 
