@@ -108,7 +108,7 @@ namespace PactNet.Mocks.MockHttpService.Nancy
                 {
                     throw new InvalidOperationException($"Invalid attempt to verify an unregistered/unexpected interaction with description '{interactionAlias}'.");
                 }
-                VerifyInteraction(comparisonResult, registeredInteraction);
+                VerifyInteraction(comparisonResult, registeredInteraction, true);
             }
             else
             {
@@ -174,7 +174,7 @@ namespace PactNet.Mocks.MockHttpService.Nancy
             throw new PactFailureException(failure.Result);
         }
 
-        private void VerifyInteraction(ComparisonResult comparisonResult, ProviderServiceInteraction registeredInteraction)
+        private void VerifyInteraction(ComparisonResult comparisonResult, ProviderServiceInteraction registeredInteraction, bool mayBeUsedMoreThanOnce = false)
         {
             var interactionUsages = _mockProviderRepository.HandledRequests.Where(x => x.MatchedInteraction != null && x.MatchedInteraction == registeredInteraction).ToList();
 
@@ -182,7 +182,7 @@ namespace PactNet.Mocks.MockHttpService.Nancy
             {
                 comparisonResult.RecordFailure(new MissingInteractionComparisonFailure(registeredInteraction));
             }
-            else if (interactionUsages.Count() > 1)
+            else if (interactionUsages.Count() > 1 && !mayBeUsedMoreThanOnce)
             {
                 comparisonResult.RecordFailure(new ErrorMessageComparisonFailure(String.Format("The interaction with description '{0}' and provider state '{1}', was used {2} time/s by the test.", registeredInteraction.Description, registeredInteraction.ProviderState, interactionUsages.Count())));
             }
