@@ -59,7 +59,8 @@ namespace PactNet.Mocks.MockHttpService.Nancy
             if (context.Request.Method.Equals("GET", StringComparison.InvariantCultureIgnoreCase) &&
                 context.Request.Path == Constants.InteractionsVerificationPath)
             {
-                return HandleGetInteractionsVerificationRequest();
+                var interactionAlias = context.Request.Query?[Constants.InteractionAliasVerificationFilter];
+                return HandleGetInteractionsVerificationRequest(interactionAlias);
             }
 
             if (context.Request.Method.Equals("POST", StringComparison.InvariantCultureIgnoreCase) &&
@@ -93,45 +94,48 @@ namespace PactNet.Mocks.MockHttpService.Nancy
             return GenerateResponse(HttpStatusCode.OK, "Added interaction");
         }
 
-        private Response HandleGetInteractionsVerificationRequest()
+        private Response HandleGetInteractionsVerificationRequest(string interactionAlias = null)
         {
             var registeredInteractions = _mockProviderRepository.TestScopedInteractions;
 
             var comparisonResult = new ComparisonResult();
 
             //Check all registered interactions have been used once and only once
-            if (registeredInteractions.Any())
+            if (interactionAlias != null)
+            {
+                var registeredInteraction = registeredInteractions.SingleOrDefault(interaction => interaction.Description.Equals(interactionAlias));
+                if (registeredInteraction == null)
+                {
+                    throw new InvalidOperationException($"Invalid attempt to verify an unregistered/unexpected interaction with description '{interactionAlias}'.");
+                }
+                VerifyInteraction(comparisonResult, registeredInteraction, true);
+            }
+            else
             {
                 foreach (var registeredInteraction in registeredInteractions)
                 {
-                    var interactionUsages = _mockProviderRepository.HandledRequests.Where(x => x.MatchedInteraction != null && x.MatchedInteraction == registeredInteraction).ToList();
-
-                    if (interactionUsages == null || !interactionUsages.Any())
-                    {
-                        comparisonResult.RecordFailure(new MissingInteractionComparisonFailure(registeredInteraction));
-                    }
-                    else if (interactionUsages.Count() > 1)
-                    {
-                        comparisonResult.RecordFailure(new ErrorMessageComparisonFailure(String.Format("The interaction with description '{0}' and provider state '{1}', was used {2} time/s by the test.", registeredInteraction.Description, registeredInteraction.ProviderState, interactionUsages.Count())));
-                    }
+                    VerifyInteraction(comparisonResult, registeredInteraction);
                 }
             }
 
-            //Have we seen any request that has not be registered by the test?
-            if (_mockProviderRepository.HandledRequests != null && _mockProviderRepository.HandledRequests.Any(x => x.MatchedInteraction == null))
-            {
-                foreach (var handledRequest in _mockProviderRepository.HandledRequests.Where(x => x.MatchedInteraction == null))
+            if (interactionAlias == null)
+            { 
+                //Have we seen any request that has not be registered by the test?
+                if (_mockProviderRepository.HandledRequests != null && _mockProviderRepository.HandledRequests.Any(x => x.MatchedInteraction == null))
                 {
-                    comparisonResult.RecordFailure(new UnexpectedRequestComparisonFailure(handledRequest.ActualRequest));
+                    foreach (var handledRequest in _mockProviderRepository.HandledRequests.Where(x => x.MatchedInteraction == null))
+                    {
+                        comparisonResult.RecordFailure(new UnexpectedRequestComparisonFailure(handledRequest.ActualRequest));
+                    }
                 }
-            }
 
-            //Have we seen any requests when no interactions were registered by the test?
-            if (!registeredInteractions.Any() && 
-                _mockProviderRepository.HandledRequests != null && 
-                _mockProviderRepository.HandledRequests.Any())
-            {
-                comparisonResult.RecordFailure(new ErrorMessageComparisonFailure("No interactions were registered, however the mock provider service was called."));
+                //Have we seen any requests when no interactions were registered by the test?
+                if (!registeredInteractions.Any() && 
+                    _mockProviderRepository.HandledRequests != null && 
+                    _mockProviderRepository.HandledRequests.Any())
+                {
+                    comparisonResult.RecordFailure(new ErrorMessageComparisonFailure("No interactions were registered, however the mock provider service was called."));
+                }
             }
 
             if (!comparisonResult.HasFailure)
@@ -168,6 +172,20 @@ namespace PactNet.Mocks.MockHttpService.Nancy
 
             var failure = comparisonResult.Failures.First();
             throw new PactFailureException(failure.Result);
+        }
+
+        private void VerifyInteraction(ComparisonResult comparisonResult, ProviderServiceInteraction registeredInteraction, bool mayBeUsedMoreThanOnce = false)
+        {
+            var interactionUsages = _mockProviderRepository.HandledRequests.Where(x => x.MatchedInteraction != null && x.MatchedInteraction == registeredInteraction).ToList();
+
+            if (interactionUsages == null || !interactionUsages.Any())
+            {
+                comparisonResult.RecordFailure(new MissingInteractionComparisonFailure(registeredInteraction));
+            }
+            else if (interactionUsages.Count() > 1 && !mayBeUsedMoreThanOnce)
+            {
+                comparisonResult.RecordFailure(new ErrorMessageComparisonFailure(String.Format("The interaction with description '{0}' and provider state '{1}', was used {2} time/s by the test.", registeredInteraction.Description, registeredInteraction.ProviderState, interactionUsages.Count())));
+            }
         }
 
         private Response HandlePostPactRequest(NancyContext context)
