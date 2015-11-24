@@ -118,9 +118,12 @@ namespace PactNet.Mocks.MockHttpService
             RegisterInteraction();
         }
 
-        public void VerifyInteractions()
+        public void VerifyInteractions(string interactionAlias = null)
         {
-            SendAdminHttpRequest(HttpVerb.Get, Constants.InteractionsVerificationPath);
+            var endpoint = Constants.InteractionsVerificationPath
+                + (interactionAlias != null ? $"?{Constants.InteractionAliasVerificationFilter}={interactionAlias}" : null);
+
+            SendAdminHttpRequest(HttpVerb.Get, endpoint);
         }
 
         public void Start()
