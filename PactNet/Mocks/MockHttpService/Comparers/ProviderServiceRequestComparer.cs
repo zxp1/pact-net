@@ -1,4 +1,8 @@
-﻿using System.Linq;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using Newtonsoft.Json.Linq;
 using PactNet.Comparers;
 using PactNet.Mocks.MockHttpService.Models;
 
@@ -19,6 +23,16 @@ namespace PactNet.Mocks.MockHttpService.Comparers
             _httpQueryStringComparer = new HttpQueryStringComparer();
             _httpHeaderComparer = new HttpHeaderComparer();
             _httpBodyComparer = new HttpBodyComparer();
+        }
+
+        public bool matchesItemInIgnoreList(JToken fieldToCheck, string[] ignoreList)
+        {
+            foreach (var item in ignoreList)
+            {
+                if (fieldToCheck.ToString().Contains(item))
+                    return true;
+            }
+            return false;
         }
 
         public ComparisonResult Compare(ProviderServiceRequest expected, ProviderServiceRequest actual)
@@ -46,12 +60,61 @@ namespace PactNet.Mocks.MockHttpService.Comparers
                 result.AddChildResult(headerResult);
             }
 
-            if (expected.Body != null)
+            //Remove items for the ignore from the list
+            JToken expectedToken = JToken.FromObject(expected.Body).DeepClone();
+            JToken actualToken = JToken.FromObject(actual.Body).DeepClone();
+
+            //Expected
+            List<JToken> removeListExpected = new List<JToken>();
+            foreach (var bodyToken in expectedToken)
             {
-                var bodyResult = _httpBodyComparer.Compare(expected.Body, actual.Body, expected.MatchingRules);
-                result.AddChildResult(bodyResult);
+                if (matchesItemInIgnoreList(bodyToken, expected.IgnoreList))
+                {
+                    removeListExpected.Add(bodyToken);
+                }
             }
 
+            foreach (JToken item in removeListExpected)
+            {
+                item.Remove();
+            }
+
+            //Actual
+            List<JToken> removeListActual = new List<JToken>();
+            foreach (var bodyToken in actualToken)
+            {
+                if (matchesItemInIgnoreList(bodyToken, expected.IgnoreList))
+                {
+                    removeListActual.Add(bodyToken);
+                }
+            }
+
+            foreach (JToken item in removeListActual)
+            {
+                item.Remove();
+            }
+
+            var expectedToken2 = JToken.FromObject(expected.Body);
+            var actualToken2 = JToken.FromObject(actual.Body);
+            bool actualRequestMatchesExpectedRequest = false;
+            try
+            {
+                actualRequestMatchesExpectedRequest = TestUtils.CheckAllPropertiesAreEqual(expectedToken2, actualToken2, expected.IgnoreList);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+            }
+            
+            if (actualRequestMatchesExpectedRequest)
+            {
+                result = new ComparisonResult("has a matching body");
+            }
+            else
+            {
+                result.RecordFailure(new ErrorMessageComparisonFailure("Expected request does not match actual request"));
+            }
+            
             return result;
         }
     }

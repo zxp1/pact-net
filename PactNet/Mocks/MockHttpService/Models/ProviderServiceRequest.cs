@@ -29,6 +29,9 @@ namespace PactNet.Mocks.MockHttpService.Models
         [JsonProperty(PropertyName = "matchingRules")]
         internal IDictionary<string, IMatcher> MatchingRules { get; private set; }
 
+        [JsonProperty(PropertyName = "ignoreList")]
+        public string[] IgnoreList { get; set; }
+
         [JsonProperty(PropertyName = "body")]
         public dynamic Body
         {

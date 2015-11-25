@@ -86,6 +86,13 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Comparers\AssertingProcessor.cs" />
+    <Compile Include="Comparers\BoolProcessor.cs" />
+    <Compile Include="Comparers\ObjectComparer.cs" />
+    <Compile Include="Comparers\PrintingProcessor.cs" />
+    <Compile Include="Comparers\PropertyUtils.cs" />
+    <Compile Include="Comparers\StringExtensions.cs" />
+    <Compile Include="Comparers\TestUtils.cs" />
     <Compile Include="Configuration\Json\Converters\CamelCaseStringEnumConverter.cs" />
     <Compile Include="Configuration\Json\Converters\PreserveCasingDictionaryConverter.cs" />
     <Compile Include="Infrastructure\Logging\ILocalLogMessageHandler.cs" />
