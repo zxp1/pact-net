@@ -60,59 +60,45 @@ namespace PactNet.Mocks.MockHttpService.Comparers
                 result.AddChildResult(headerResult);
             }
 
-            //Remove items for the ignore from the list
-            JToken expectedToken = JToken.FromObject(expected.Body).DeepClone();
-            JToken actualToken = JToken.FromObject(actual.Body).DeepClone();
-
-            //Expected
-            List<JToken> removeListExpected = new List<JToken>();
-            foreach (var bodyToken in expectedToken)
+            if (expected.Body == null && actual.Body == null)
             {
-                if (matchesItemInIgnoreList(bodyToken, expected.IgnoreList))
-                {
-                    removeListExpected.Add(bodyToken);
-                }
+                //result.AddChildResult("has a matching body");
+                //return result;
             }
-
-            foreach (JToken item in removeListExpected)
+            else if (expected.Body == null)
             {
-                item.Remove();
+                result.RecordFailure(new ErrorMessageComparisonFailure(
+                    "Expected request does not match actual request"));
+                return result;
             }
-
-            //Actual
-            List<JToken> removeListActual = new List<JToken>();
-            foreach (var bodyToken in actualToken)
+            else if (actual.Body == null)
             {
-                if (matchesItemInIgnoreList(bodyToken, expected.IgnoreList))
-                {
-                    removeListActual.Add(bodyToken);
-                }
-            }
-
-            foreach (JToken item in removeListActual)
-            {
-                item.Remove();
-            }
-
-            var expectedToken2 = JToken.FromObject(expected.Body);
-            var actualToken2 = JToken.FromObject(actual.Body);
-            bool actualRequestMatchesExpectedRequest = false;
-            try
-            {
-                actualRequestMatchesExpectedRequest = TestUtils.CheckAllPropertiesAreEqual(expectedToken2, actualToken2, expected.IgnoreList);
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-            }
-            
-            if (actualRequestMatchesExpectedRequest)
-            {
-                result = new ComparisonResult("has a matching body");
+                result.RecordFailure(new ErrorMessageComparisonFailure(
+                    "Expected request does not match actual request"));
+                return result;
             }
             else
             {
-                result.RecordFailure(new ErrorMessageComparisonFailure("Expected request does not match actual request"));
+                var expectedToken2 = JToken.FromObject(expected.Body);
+                var actualToken2 = JToken.FromObject(actual.Body);
+                bool actualRequestMatchesExpectedRequest = false;
+                try
+                {
+                    actualRequestMatchesExpectedRequest = TestUtils.CheckAllPropertiesAreEqual(expectedToken2, actualToken2, expected.IgnoreList);
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                }
+
+                if (actualRequestMatchesExpectedRequest)
+                {
+                    //result.AddChildResult("has a matching request");
+                }
+                else
+                {
+                    result.RecordFailure(new ErrorMessageComparisonFailure("Expected request does not match actual request"));
+                }
             }
             
             return result;

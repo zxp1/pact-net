@@ -16,7 +16,7 @@ namespace PactNet.Models
 
         [JsonProperty(Order = -2, PropertyName = "provider_state")] //provider_state will become providerState
         public string ProviderState { get; set; }
-
+        
         //[Obsolete("For backwards compatibility.")]
         //public string provider_state { set { ProviderState = value; } } //Uncomment when provider_state becomes providerState
         [Obsolete("For forwards compatibility.")]
