@@ -79,20 +79,9 @@ namespace PactNet.Mocks.MockHttpService.Comparers
                 
                 var expectedToken2 = JToken.FromObject(expected.Body);
                 var actualToken2 = JToken.FromObject(actual.Body);
-
-                bool actualRequestMatchesExpectedRequest = false;
-
-                try
-                {
-                    actualRequestMatchesExpectedRequest = TestUtils.CheckAllPropertiesAreEqual(expectedToken2,
-                        actualToken2, expected.IgnoreList);
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine(e);
-                }
-
-                if (!actualRequestMatchesExpectedRequest)
+                
+                if (!TestUtils.CheckAllPropertiesAreEqual(expectedToken2,
+                        actualToken2, expected.IgnoreList))
                 {
                     result.RecordFailure(
                         new ErrorMessageComparisonFailure("Expected request does not match actual request"));
