@@ -87,16 +87,12 @@ namespace PactNet.Mocks.MockHttpService
             {
                 throw new PactFailureException(String.Format("No interaction found for {0} {1}.", request.Method.ToString().ToUpperInvariant(), request.Path));
             }
-
-            /*if (matchingInteractions.Count() > 1)
-            {
-                throw new PactFailureException(String.Format("More than one interaction found for {0} {1}.", request.Method.ToString().ToUpperInvariant(), request.Path));
-            }*/
-
+            
             if (matchingInteractions.Count() > 1)
             {
                 return matchingInteractions.Last();
             }
+
             return matchingInteractions.Single();
         }
 

@@ -60,47 +60,46 @@ namespace PactNet.Mocks.MockHttpService.Comparers
                 result.AddChildResult(headerResult);
             }
 
-            if (expected.Body == null && actual.Body == null)
+            if (expected.Body != null || actual.Body != null)
             {
-                //result.AddChildResult("has a matching body");
-                //return result;
-            }
-            else if (expected.Body == null)
-            {
-                result.RecordFailure(new ErrorMessageComparisonFailure(
-                    "Expected request does not match actual request"));
-                return result;
-            }
-            else if (actual.Body == null)
-            {
-                result.RecordFailure(new ErrorMessageComparisonFailure(
-                    "Expected request does not match actual request"));
-                return result;
-            }
-            else
-            {
+
+                if (expected.Body == null)
+                {
+                    result.RecordFailure(new ErrorMessageComparisonFailure(
+                        "Expected request does not match actual request"));
+                    return result;
+                }
+
+                if (actual.Body == null)
+                {
+                    result.RecordFailure(new ErrorMessageComparisonFailure(
+                        "Expected request does not match actual request"));
+                    return result;
+                }
+                
                 var expectedToken2 = JToken.FromObject(expected.Body);
                 var actualToken2 = JToken.FromObject(actual.Body);
+
                 bool actualRequestMatchesExpectedRequest = false;
+
                 try
                 {
-                    actualRequestMatchesExpectedRequest = TestUtils.CheckAllPropertiesAreEqual(expectedToken2, actualToken2, expected.IgnoreList);
+                    actualRequestMatchesExpectedRequest = TestUtils.CheckAllPropertiesAreEqual(expectedToken2,
+                        actualToken2, expected.IgnoreList);
                 }
                 catch (Exception e)
                 {
                     Console.WriteLine(e);
                 }
 
-                if (actualRequestMatchesExpectedRequest)
+                if (!actualRequestMatchesExpectedRequest)
                 {
-                    //result.AddChildResult("has a matching request");
+                    result.RecordFailure(
+                        new ErrorMessageComparisonFailure("Expected request does not match actual request"));
                 }
-                else
-                {
-                    result.RecordFailure(new ErrorMessageComparisonFailure("Expected request does not match actual request"));
-                }
+                
             }
-            
+
             return result;
         }
     }
