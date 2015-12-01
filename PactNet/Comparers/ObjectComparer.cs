@@ -6,6 +6,7 @@ using System.Reflection;
 using System.Text;
 using Newtonsoft.Json.Linq;
 using System.IO;
+using System.Net.Http.Headers;
 
 namespace PactNet.Comparers
 {
@@ -56,15 +57,15 @@ namespace PactNet.Comparers
         /// <param name="processor">Comparisson processor</param>
         /// <param name="enforceReferences">Should references equate (should they be the same object)</param>
         public ObjectComparer(
-        object expected,
-        object actual,
-        IObjectMatcherProcessor<TResult> processor,
-        bool enforceReferences)
+            object expected,
+            object actual,
+            IObjectMatcherProcessor<TResult> processor,
+            bool enforceReferences)
             : this(expected,
                 actual,
                 processor,
                 enforceReferences, new string[0],
-            false)
+                false)
         {
         }
 
@@ -113,7 +114,7 @@ namespace PactNet.Comparers
             object expected,
             object actual,
             string hierarchy,
-            IEnumerable<string> ignoreList//,IEnumerable<string> utcDateList
+            IEnumerable<string> ignoreList //,IEnumerable<string> utcDateList
             )
         {
             if (ignoreList == null)
@@ -147,7 +148,7 @@ namespace PactNet.Comparers
                 }
 
 
-                if (!actual.GetType().Equals(typeof(string)))
+                if (!actual.GetType().Equals(typeof (string)))
                 {
                     // See TestAllPropertiesAreEqualSimple_ReferenceEqualityWhenCreatingNewCharBufferString
                     // Creating a new string buffer breaks reference equality unexpectedly
@@ -167,7 +168,7 @@ namespace PactNet.Comparers
                             {
                                 // an expected identical reference was not found
                                 throw new ResultsDifferException(_processor.MismatchObjectReference(expected, actual,
-                                                                                                    hierarchy));
+                                    hierarchy));
                             }
                         }
                     }
@@ -179,19 +180,19 @@ namespace PactNet.Comparers
 
             if (expected is IDictionary)
             {
-                CompareDictionaries((IDictionary)expected, (IDictionary)actual, hierarchy, ignoreList);
+                CompareDictionaries((IDictionary) expected, (IDictionary) actual, hierarchy, ignoreList);
             }
             else if (expected is JObject)
             {
-                CompareJObjects((JObject)expected, (JObject)actual, hierarchy, ignoreList);
+                CompareJObjects((JObject) expected, (JObject) actual, hierarchy, ignoreList);
             }
             else if (expected is ICollection)
             {
-                CompareCollection((ICollection)expected, (ICollection)actual, hierarchy, ignoreList);
+                CompareCollection((ICollection) expected, (ICollection) actual, hierarchy, ignoreList);
             }
             else if (expected is JToken)
             {
-                var token = (JToken)expected;
+                var token = (JToken) expected;
                 if (!ignoreList.Contains(token.Path))
                 {
                     if (!expected.Equals(actual))
@@ -203,34 +204,37 @@ namespace PactNet.Comparers
             else if (!(expected is string) && expected is IEnumerable)
             {
                 // We treat strings as a non enumerable item for performance (and ease of error reporting)
-                CompareIEnumerable((IEnumerable)expected, (IEnumerable)actual, hierarchy, ignoreList);
+                CompareIEnumerable((IEnumerable) expected, (IEnumerable) actual, hierarchy, ignoreList);
             }
             else if (expected is MemoryStream && actual is MemoryStream)
             {
-                InternalCompareValues(((MemoryStream)expected).ToArray(), ((MemoryStream)actual).ToArray(), hierarchy, ignoreList);
+                InternalCompareValues(((MemoryStream) expected).ToArray(), ((MemoryStream) actual).ToArray(), hierarchy,
+                    ignoreList);
             }
             else if ((PropertyUtils.IsCustomType(expected.GetType())
-                        || expected is Exception)
+                      || expected is Exception)
                      && !expected.GetType().IsEnum)
             {
                 IEnumerable<PropertyInfo> properties;
                 //If type is derived from BaseDomainEntity then ignore the "CreatedAt" field comparision.
                 if (Type.GetType("Leica.Bond.Common.DataAccess.BaseDomainEntity, Leica.Bond.Common.DataAccess") != null &&
-                    expected.GetType().IsSubclassOf(Type.GetType("Leica.Bond.Common.DataAccess.BaseDomainEntity, Leica.Bond.Common.DataAccess")))
+                    expected.GetType()
+                        .IsSubclassOf(
+                            Type.GetType("Leica.Bond.Common.DataAccess.BaseDomainEntity, Leica.Bond.Common.DataAccess")))
                 {
                     properties = expected.GetType().GetProperties()
                         .Where(
                             p =>
-                            p.CanRead && !ignoreList.Contains(p.Name) && p.Name != "CreatedAt" &&
-                            _processor.ShouldCompareProperty(expected, actual, p));
+                                p.CanRead && !ignoreList.Contains(p.Name) && p.Name != "CreatedAt" &&
+                                _processor.ShouldCompareProperty(expected, actual, p));
                 }
                 else
                 {
                     properties = expected.GetType().GetProperties()
                         .Where(
                             p =>
-                            p.CanRead && !ignoreList.Contains(p.Name) &&
-                            _processor.ShouldCompareProperty(expected, actual, p));
+                                p.CanRead && !ignoreList.Contains(p.Name) &&
+                                _processor.ShouldCompareProperty(expected, actual, p));
                 }
                 foreach (PropertyInfo property in properties)
                 {
@@ -239,7 +243,10 @@ namespace PactNet.Comparers
                     InternalCompareValues(obj1, obj2, JoinHierarchy(hierarchy, property.Name), ignoreList);
                 }
                 foreach (FieldInfo field in expected.GetType().GetFields()
-                    .Where(f => f.IsPublic && !ignoreList.Contains(f.Name) && _processor.ShouldCompareField(expected, actual, f)))
+                    .Where(
+                        f =>
+                            f.IsPublic && !ignoreList.Contains(f.Name) &&
+                            _processor.ShouldCompareField(expected, actual, f)))
                 {
                     object obj1 = ReturnValueOrException(expected, o => field.GetValue(o));
                     object obj2 = ReturnValueOrException(actual, o => field.GetValue(o));
@@ -251,11 +258,11 @@ namespace PactNet.Comparers
                 TimeSpan tolerance = TimeSpan.FromSeconds(_ignoreDateTimeMilliseconds ? 1 : 0);
 
                 if ((expected is DateTime?) &&
-                    DoDateTimesMatchToWithinTolerance((DateTime?)expected, (DateTime?)actual, tolerance))
+                    DoDateTimesMatchToWithinTolerance((DateTime?) expected, (DateTime?) actual, tolerance))
                     return;
 
                 if ((expected is DateTime) &&
-                    DoDateTimesMatchToWithinTolerance((DateTime)expected, (DateTime)actual, tolerance))
+                    DoDateTimesMatchToWithinTolerance((DateTime) expected, (DateTime) actual, tolerance))
                     return;
 
                 if (!expected.Equals(actual))
@@ -267,12 +274,14 @@ namespace PactNet.Comparers
 
         private void CompareJObjects(JObject expected, JObject actual, string hierarchy, IEnumerable<string> ignoreList)
         {
-            var expTokenNames = expected.Children().Select(n => JoinHierarchy(hierarchy, ((JProperty)n).Name)).ToArray();
-            var actTokenNames = actual.Children().Select(n => JoinHierarchy(hierarchy, ((JProperty)n).Name)).ToArray();
+            var expTokenNames =
+                expected.Children().Select(n => JoinHierarchy(hierarchy, ((JProperty) n).Name)).ToArray();
+            var actTokenNames = actual.Children().Select(n => JoinHierarchy(hierarchy, ((JProperty) n).Name)).ToArray();
             // More fields in expected (i.e. fields are present in expected which aren't present in actual or ignore) should result in a fail:
             var missingTokenNames = expTokenNames.Except(ignoreList).Except(actTokenNames).ToArray();
             if (missingTokenNames.Any())
-                throw new ResultsDifferException(_processor.MismatchObject(string.Join(", ", missingTokenNames), null, hierarchy));
+                throw new ResultsDifferException(_processor.MismatchObject(string.Join(", ", missingTokenNames), null,
+                    hierarchy));
             // Add any extra tokens to ignore list, as in this case we don't care about them
             ignoreList = ignoreList.Concat(actTokenNames.Except(expTokenNames)).Distinct();
 
@@ -284,15 +293,22 @@ namespace PactNet.Comparers
                 {
                     var movedToNext = true;
                     // loop until an object not being ignored is encountered
-                    while ((ignoreList.Contains(JoinHierarchy(hierarchy, actualEnum.Current.Key)) || actualEnum.Current.Key == "$type") &&
+                    while ((ignoreList.Contains(JoinHierarchy(hierarchy, actualEnum.Current.Key)) ||
+                            actualEnum.Current.Key == "$type") &&
                            (movedToNext = actualEnum.MoveNext()))
                         ;
+
+                    while (expectedEnum.Current.Key == "$type")
+                    {
+                        expectedEnum.MoveNext();
+                    }
 
                     if (movedToNext)
                     {
                         if (expectedEnum.Current.Key != actualEnum.Current.Key)
                             throw new ResultsDifferException(_processor.MismatchObject(expectedEnum.Current.Key,
                                 actualEnum.Current.Key, hierarchy));
+
                         InternalCompareValues(expectedEnum.Current.Value, actualEnum.Current.Value,
                             JoinHierarchy(hierarchy, actualEnum.Current.Key), ignoreList);
                         int a = 0;
@@ -323,23 +339,58 @@ namespace PactNet.Comparers
             return false; // Only one 'has value'.
         }
 
-        private void CompareCollection(ICollection expectedCol, ICollection actualCol, string hierarchy, IEnumerable<string> ignoreList)
+        private void CompareCollection(ICollection expectedCol, ICollection actualCol, string hierarchy,
+            IEnumerable<string> ignoreList)
         {
-            if (expectedCol.Count != actualCol.Count)
+            if (expectedCol.Count > actualCol.Count)
             {
                 throw new ResultsDifferException(_processor.MismatchCollectionLength(expectedCol.Count,
-                                                                                     actualCol.Count, expectedCol,
-                                                                                     actualCol, hierarchy));
+                    actualCol.Count, expectedCol,
+                    actualCol, hierarchy));
             }
+
             var expectedEnum = expectedCol.GetEnumerator();
             var actualEnum = actualCol.GetEnumerator();
             int index = 0;
-            while (expectedEnum.MoveNext() && actualEnum.MoveNext())
+            actualEnum.MoveNext();
+            while (expectedEnum.MoveNext())
             {
-                InternalCompareValues(expectedEnum.Current, actualEnum.Current, hierarchy + "[" + index + "]", ignoreList);
-                index++;
+                bool retry = true;
+                int retryCount = 0;
+                while (retry)
+                {
+                    try
+                    {
+                        retry = false;
+                        InternalCompareValues(expectedEnum.Current, actualEnum.Current, hierarchy + "[" + index + "]",
+                            ignoreList);
+                    }
+                    catch (Exception e)
+                    {
+                        if (retryCount > actualCol.Count)
+                        {
+                            retry = false;
+                            throw new Exception("Expected not found: " + expectedEnum.Current.ToString());
+                        }
+                        else
+                        {
+                            retry = true;
+                        }
+
+                        retryCount++;
+                        if (!actualEnum.MoveNext())
+                        {
+                            actualEnum.Reset();
+                        }
+                    }
+                }
             }
+
+            index++;
+
         }
+    
+
 
         private void CompareDictionaries(IDictionary expectedDict, IDictionary actualDict, string hierarchy, IEnumerable<string> ignoreList)
         {
